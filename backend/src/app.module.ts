@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
+// ServeStaticModule は削除
 import { ContentsModule } from './contents/contents.module';
 import { TagsModule } from './tags/tags.module';
 import { HealthController } from './health/health.controller';
@@ -17,14 +16,8 @@ import { HealthController } from './health/health.controller';
       password: process.env.DB_PASS || 'media_pass',
       database: process.env.DB_NAME || 'media_db',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true, // 本番環境ではfalseに設定
+      synchronize: true,
       logging: process.env.NODE_ENV === 'development',
-    }),
-
-    // メディアファイルの静的配信
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', '..', 'media'),
-      serveRoot: '/media',
     }),
 
     // 各モジュール

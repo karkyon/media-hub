@@ -86,10 +86,23 @@ export class ContentsService {
   ): Promise<Content> {
     const { title, description, type, isPublic, tags } = createContentDto;
 
-    // タグの処理
+    // タグの処理（文字列が来た場合はパース）
+    let tagArray: string[] = [];
+    if (tags) {
+      if (typeof tags === 'string') {
+        try {
+          tagArray = JSON.parse(tags);
+        } catch {
+          tagArray = [tags];
+        }
+      } else if (Array.isArray(tags)) {
+        tagArray = tags;
+      }
+    }
+
     let tagEntities: Tag[] = [];
-    if (tags && tags.length > 0) {
-      tagEntities = await this.findOrCreateTags(tags);
+    if (tagArray.length > 0) {
+      tagEntities = await this.findOrCreateTags(tagArray);
     }
 
     // コンテンツの作成
@@ -97,7 +110,7 @@ export class ContentsService {
       title,
       description,
       type,
-      filePath: file.path.replace(/\\/g, '/'), // Windows対応
+      filePath: file.path.replace(/\\/g, '/'),
       isPublic: isPublic !== undefined ? isPublic : true,
       tags: tagEntities,
     });

@@ -12,7 +12,13 @@ import {
   ParseIntPipe,
   UsePipes,
   ValidationPipe,
+  Res, 
+  StreamableFile,
 } from '@nestjs/common';
+import { Response } from 'express';
+import { createReadStream } from 'fs';
+import { join } from 'path';
+import { stat } from 'fs/promises';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
@@ -69,6 +75,47 @@ export class ContentsController {
     );
   }
 
+  /* ===============================
+      メディアファイル配信
+     =============================== */
+  @Get('media/*')
+  @ApiOperation({ summary: 'メディアファイル配信' })
+  async serveMedia(@Param('0') filePath: string, @Res() res: Response) {
+    try {
+      console.log('📂 Requested file path:', filePath);
+      // ファイルの完全パスを構築
+      const fullPath = join(__dirname, '..', '..', '..', 'media', filePath);
+      console.log('📂 Full path:', fullPath);
+      
+      // ファイルが存在するか確認
+      await stat(fullPath);
+      console.log('✅ File exists!');
+      
+      // MIMEタイプを設定
+      if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+        res.setHeader('Content-Type', 'image/jpeg');
+      } else if (filePath.endsWith('.png')) {
+        res.setHeader('Content-Type', 'image/png');
+      } else if (filePath.endsWith('.gif')) {
+        res.setHeader('Content-Type', 'image/gif');
+      } else if (filePath.endsWith('.webp')) {
+        res.setHeader('Content-Type', 'image/webp');
+      } else if (filePath.endsWith('.mp4')) {
+        res.setHeader('Content-Type', 'video/mp4');
+      } else if (filePath.endsWith('.webm')) {
+        res.setHeader('Content-Type', 'video/webm');
+      } else if (filePath.endsWith('.mov')) {
+        res.setHeader('Content-Type', 'video/quicktime');
+      }
+      
+      // ファイルを送信
+      return res.sendFile(fullPath);
+    } catch (error) {
+      console.error('❌ File not found:', error);
+      return res.status(404).json({ message: 'File not found' });
+    }
+  }
+  
   /* ===============================
      詳細取得
      =============================== */

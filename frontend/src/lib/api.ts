@@ -93,7 +93,10 @@ export const tagsApi = {
 
 // メディアファイルのURLを取得
 export const getMediaUrl = (filePath: string): string => {
-  return `${API_BASE_URL}/${filePath}`;
+  // filePathの形式を確認して整形
+  // "media/images/image_123.jpg" → "/contents/media/images/image_123.jpg"
+  const cleanPath = filePath.startsWith('media/') ? filePath.substring(6) : filePath;
+  return `${API_BASE_URL}/contents/media/${cleanPath}`;
 };
 
 export default api;
