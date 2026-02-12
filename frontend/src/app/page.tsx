@@ -1,119 +1,119 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { contentsApi } from '@/lib/api';
 import { Content } from '@/types/api';
 import ContentCard from '@/components/ContentCard';
-import FilterBar from '@/components/FilterBar';
 import UploadModal from '@/components/UploadModal';
+import EditModal from '@/components/EditModal';
+import DeleteModal from '@/components/DeleteModal';
+import FilterBar from '@/components/FilterBar';
 import Pagination from '@/components/Pagination';
 
 export default function Home() {
   const [contents, setContents] = useState<Content[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  
-  // フィルター状態
-  const [typeFilter, setTypeFilter] = useState<string>('');
-  const [searchKeyword, setSearchKeyword] = useState('');
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [keyword, setKeyword] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [tagFilter, setTagFilter] = useState('');
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<Content | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Content | null>(null);
 
-  const fetchContents = async () => {
+  const fetchContents = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await contentsApi.getAll({
-        page,
-        limit: 20,
+      const res = await contentsApi.getAll({
+        page, limit: 12,
         type: typeFilter || undefined,
-        keyword: searchKeyword || undefined,
+        keyword: keyword || undefined,
+        tag: tagFilter || undefined,
       });
-      setContents(response.data);
-      setTotal(response.total);
-      setTotalPages(response.totalPages);
-    } catch (error) {
-      console.error('Failed to fetch contents:', error);
+      setContents(res.data);
+      setTotalPages(res.totalPages);
+      setTotal(res.total);
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, keyword, typeFilter, tagFilter]);
 
-  useEffect(() => {
-    fetchContents();
-  }, [page, typeFilter, searchKeyword]);
-
-  const handleUploadSuccess = () => {
-    setIsUploadModalOpen(false);
-    fetchContents();
-  };
+  useEffect(() => { fetchContents(); }, [fetchContents]);
+  useEffect(() => { setPage(1); }, [keyword, typeFilter, tagFilter]);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-white border-b-2 border-border sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-primary">📚 社内メディアライブラリ</h1>
-          <button
-            onClick={() => setIsUploadModalOpen(true)}
-            className="btn-primary flex items-center gap-2"
-          >
-            <span className="text-xl">+</span>
-            <span>追加</span>
-          </button>
+    <div className="min-h-screen" style={{ background: '#0a0a0a' }}>
+      <header className="border-b sticky top-0 z-40" style={{ borderColor: '#2a2a2a', background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)' }}>
+        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-xs tracking-[0.3em] uppercase text-gray-500 font-medium">Media</span>
+            <span className="w-px h-4 bg-gray-800" />
+            <span className="text-sm text-gray-300 font-medium">Library</span>
+          </div>
+          <div className="flex items-center gap-3">
+            {total > 0 && <span className="text-xs text-gray-700">{total} items</span>}
+            <button onClick={() => setIsUploadOpen(true)}
+              className="px-5 py-2 text-xs bg-white text-black hover:bg-gray-100 transition-colors tracking-wider font-medium">
+              + ADD
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Filter Bar */}
-      <FilterBar
-        typeFilter={typeFilter}
-        setTypeFilter={setTypeFilter}
-        searchKeyword={searchKeyword}
-        setSearchKeyword={setSearchKeyword}
-      />
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <FilterBar keyword={keyword} onKeywordChange={setKeyword}
+          typeFilter={typeFilter} onTypeFilterChange={setTypeFilter}
+          tagFilter={tagFilter} onTagFilterChange={setTagFilter} />
 
-      {/* Content Grid */}
-      <main className="max-w-7xl mx-auto px-6 py-6">
-        {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="text-gray-500">読み込み中...</div>
-          </div>
-        ) : contents.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">📭</div>
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">
-              コンテンツが見つかりません
-            </h3>
-            <p className="text-gray-500">
-              新しいコンテンツを追加してください
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {contents.map((content) => (
-                <ContentCard key={content.id} content={content} />
+        <div className="mt-8">
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-px" style={{ background: '#2a2a2a' }}>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="animate-pulse" style={{ background: '#111', aspectRatio: '16/10' }} />
               ))}
             </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={setPage}
-              />
-            )}
-          </>
-        )}
+          ) : contents.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-40 gap-4">
+              <p className="text-sm tracking-widest text-gray-700 uppercase">No Content</p>
+              <button onClick={() => setIsUploadOpen(true)}
+                className="mt-2 px-6 py-2 text-xs border text-gray-500 hover:text-white hover:border-gray-500 transition-colors tracking-widest"
+                style={{ borderColor: '#2a2a2a' }}>
+                + UPLOAD FIRST CONTENT
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-px" style={{ background: '#2a2a2a' }}>
+                {contents.map((content) => (
+                  <ContentCard key={content.id} content={content}
+                    onEdit={setEditTarget} onDelete={setDeleteTarget} />
+                ))}
+              </div>
+              {totalPages > 1 && (
+                <div className="mt-10">
+                  <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </main>
 
-      {/* Upload Modal */}
-      {isUploadModalOpen && (
-        <UploadModal
-          onClose={() => setIsUploadModalOpen(false)}
-          onSuccess={handleUploadSuccess}
-        />
+      {isUploadOpen && (
+        <UploadModal onClose={() => setIsUploadOpen(false)}
+          onSuccess={() => { setIsUploadOpen(false); fetchContents(); }} />
+      )}
+      {editTarget && (
+        <EditModal content={editTarget} onClose={() => setEditTarget(null)}
+          onSuccess={() => { setEditTarget(null); fetchContents(); }} />
+      )}
+      {deleteTarget && (
+        <DeleteModal content={deleteTarget} onClose={() => setDeleteTarget(null)}
+          onSuccess={() => { setDeleteTarget(null); fetchContents(); }} />
       )}
     </div>
   );

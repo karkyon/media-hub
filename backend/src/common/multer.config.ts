@@ -4,9 +4,9 @@ import { existsSync, mkdirSync } from 'fs';
 
 // ファイル保存先ディレクトリの作成
 const mediaDir = './media';
-const videosDir = './media/videos';
-const imagesDir = './media/images';
-const thumbnailsDir = './media/thumbnails';
+const videosDir = '/media/videos';
+const imagesDir = '/media/images';
+const thumbnailsDir = '/media/thumbnails';
 
 [mediaDir, videosDir, imagesDir, thumbnailsDir].forEach((dir) => {
   if (!existsSync(dir)) {

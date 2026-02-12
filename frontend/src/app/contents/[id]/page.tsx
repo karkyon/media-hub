@@ -151,9 +151,9 @@ export default function ContentDetail() {
 
       {/* Delete Modal */}
       {isDeleteModalOpen && (
-        <DeleteModal
+        <DeleteModal content={content}
           onClose={() => setIsDeleteModalOpen(false)}
-          onConfirm={handleDelete}
+          onSuccess={handleDelete}
         />
       )}
     </div>
