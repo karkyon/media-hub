@@ -32,7 +32,7 @@ services:
       DB_PASS: media_pass
       DB_NAME: media_db
     volumes:
-      - ./media:/app/media
+      - ./media:/media
     depends_on:
       db:
         condition: service_healthy
