@@ -46,61 +46,67 @@ export default function Home() {
   useEffect(() => { setPage(1); }, [keyword, typeFilter, tagFilter]);
 
   return (
-    <div className="min-h-screen" style={{ background: '#0a0a0a' }}>
-      <header className="border-b sticky top-0 z-40" style={{ borderColor: '#2a2a2a', background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(12px)' }}>
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+    <div className="min-h-screen" style={{ background: '#f0f2f5' }}>
+      {/* ヘッダー */}
+      <header className="bg-white border-b sticky top-0 z-40" style={{ borderColor: '#e8eaed' }}>
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-xs tracking-[0.3em] uppercase text-gray-500 font-medium">Media</span>
-            <span className="w-px h-4 bg-gray-800" />
-            <span className="text-sm text-gray-300 font-medium">Library</span>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold"
+              style={{ background: '#3b82f6' }}>M</div>
+            <span className="text-base font-semibold" style={{ color: '#1a1a2e' }}>社内メディアライブラリ</span>
           </div>
           <div className="flex items-center gap-3">
-            {total > 0 && <span className="text-xs text-gray-700">{total} items</span>}
+            {total > 0 && (
+              <span className="text-sm" style={{ color: '#6b7280' }}>{total}件</span>
+            )}
             <button onClick={() => setIsUploadOpen(true)}
-              className="px-5 py-2 text-xs bg-white text-black hover:bg-gray-100 transition-colors tracking-wider font-medium">
-              + ADD
+              className="btn-primary">
+              ＋ コンテンツを追加
             </button>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8">
-        <FilterBar keyword={keyword} onKeywordChange={setKeyword}
-          typeFilter={typeFilter} onTypeFilterChange={setTypeFilter}
-          tagFilter={tagFilter} onTagFilterChange={setTagFilter} />
+        {/* フィルターバー */}
+        <div className="card p-4 mb-6">
+          <FilterBar keyword={keyword} onKeywordChange={setKeyword}
+            typeFilter={typeFilter} onTypeFilterChange={setTypeFilter}
+            tagFilter={tagFilter} onTagFilterChange={setTagFilter} />
+        </div>
 
-        <div className="mt-8">
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-px" style={{ background: '#2a2a2a' }}>
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="animate-pulse" style={{ background: '#111', aspectRatio: '16/10' }} />
+        {/* グリッド */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="card animate-pulse" style={{ aspectRatio: '4/3' }} />
+            ))}
+          </div>
+        ) : contents.length === 0 ? (
+          <div className="card flex flex-col items-center justify-center py-24 gap-4">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl"
+              style={{ background: '#eff6ff' }}>📭</div>
+            <p className="text-base font-medium" style={{ color: '#374151' }}>コンテンツがありません</p>
+            <p className="text-sm" style={{ color: '#9ca3af' }}>最初のコンテンツを追加してください</p>
+            <button onClick={() => setIsUploadOpen(true)} className="btn-primary mt-2">
+              ＋ 追加する
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {contents.map((content) => (
+                <ContentCard key={content.id} content={content}
+                  onEdit={setEditTarget} onDelete={setDeleteTarget} />
               ))}
             </div>
-          ) : contents.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-40 gap-4">
-              <p className="text-sm tracking-widest text-gray-700 uppercase">No Content</p>
-              <button onClick={() => setIsUploadOpen(true)}
-                className="mt-2 px-6 py-2 text-xs border text-gray-500 hover:text-white hover:border-gray-500 transition-colors tracking-widest"
-                style={{ borderColor: '#2a2a2a' }}>
-                + UPLOAD FIRST CONTENT
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-px" style={{ background: '#2a2a2a' }}>
-                {contents.map((content) => (
-                  <ContentCard key={content.id} content={content}
-                    onEdit={setEditTarget} onDelete={setDeleteTarget} />
-                ))}
+            {totalPages > 1 && (
+              <div className="mt-8">
+                <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
               </div>
-              {totalPages > 1 && (
-                <div className="mt-10">
-                  <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
-                </div>
-              )}
-            </>
-          )}
-        </div>
+            )}
+          </>
+        )}
       </main>
 
       {isUploadOpen && (

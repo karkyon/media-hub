@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { contentsApi, getMediaUrl } from '@/lib/api';
 import { Content } from '@/types/api';
+import EditModal from '@/components/EditModal';
 import DeleteModal from '@/components/DeleteModal';
 
 export default function ContentDetail() {
@@ -13,148 +15,122 @@ export default function ContentDetail() {
 
   const [content, setContent] = useState<Content | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
 
-  useEffect(() => {
-    const fetchContent = async () => {
-      try {
-        const data = await contentsApi.getById(id);
-        setContent(data);
-      } catch (error) {
-        console.error('Failed to fetch content:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchContent();
-  }, [id]);
-
-  const handleDelete = async () => {
+  const fetchContent = async () => {
     try {
-      await contentsApi.delete(id);
-      router.push('/');
-    } catch (error) {
-      console.error('Failed to delete content:', error);
+      setLoading(true);
+      const data = await contentsApi.getById(id);
+      setContent(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-500">読み込み中...</div>
-      </div>
-    );
-  }
+  useEffect(() => { if (id) fetchContent(); }, [id]);
 
-  if (!content) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">コンテンツが見つかりません</h2>
-          <button onClick={() => router.push('/')} className="btn-primary">
-            一覧に戻る
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#f0f2f5' }}>
+      <div className="text-sm" style={{ color: '#9ca3af' }}>読み込み中...</div>
+    </div>
+  );
+
+  if (!content) return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: '#f0f2f5' }}>
+      <p className="text-sm" style={{ color: '#6b7280' }}>コンテンツが見つかりません</p>
+      <Link href="/" className="btn-primary">一覧に戻る</Link>
+    </div>
+  );
+
+  const isVideo = content.type === 'video';
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-white border-b-2 border-border shadow-sm">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
-          <button
-            onClick={() => router.push('/')}
-            className="btn-secondary flex items-center gap-2"
-          >
-            <span>←</span>
-            <span>一覧に戻る</span>
-          </button>
+    <div className="min-h-screen" style={{ background: '#f0f2f5' }}>
+      <header className="bg-white border-b sticky top-0 z-40" style={{ borderColor: '#e8eaed' }}>
+        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 text-sm font-medium transition-colors"
+            style={{ color: '#6b7280' }}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/>
+            </svg>
+            一覧に戻る
+          </Link>
           <div className="flex gap-2">
-            <button className="btn-primary">編集</button>
-            <button
-              onClick={() => setIsDeleteModalOpen(true)}
-              className="btn-danger"
-            >
-              削除
-            </button>
+            <button onClick={() => setShowEdit(true)} className="btn-secondary">編集</button>
+            <button onClick={() => setShowDelete(true)} className="btn-danger">削除</button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-6">
-        {/* Media Display */}
-        <div className="bg-white rounded-xl overflow-hidden shadow-sm mb-6">
-          {content.type === 'video' ? (
-            <video
-              controls
-              className="w-full aspect-video bg-gray-900"
-              src={getMediaUrl(content.filePath)}
-            >
-              お使いのブラウザは動画タグをサポートしていません。
+      <main className="max-w-5xl mx-auto px-6 py-8">
+        <div className="card overflow-hidden mb-6">
+          {isVideo ? (
+            <video controls className="w-full" style={{ maxHeight: '60vh', background: '#000' }}
+              src={getMediaUrl(content.filePath)}>
+              お使いのブラウザは動画再生に対応していません。
             </video>
           ) : (
-            <img
-              src={getMediaUrl(content.filePath)}
-              alt={content.title}
-              className="w-full object-contain max-h-[600px] bg-gray-100"
-            />
+            <img src={getMediaUrl(content.filePath)} alt={content.title}
+              className="w-full object-contain" style={{ maxHeight: '60vh', background: '#f9fafb' }} />
           )}
         </div>
 
-        {/* Content Info */}
-        <div className="card mb-6">
-          <h1 className="text-3xl font-bold mb-4">{content.title}</h1>
-
-          <div className="flex flex-wrap gap-6 mb-6 pb-6 border-b border-border">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span className="font-semibold">種別:</span>
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                content.type === 'video' 
-                  ? 'bg-pink-100 text-pink-700' 
-                  : 'bg-blue-100 text-blue-700'
-              }`}>
-                {content.type === 'video' ? '🎥 動画' : '🖼️ 画像'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span className="font-semibold">登録日:</span>
-              <span>{new Date(content.createdAt).toLocaleDateString('ja-JP')}</span>
-            </div>
-            {content.tags.length > 0 && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span className="font-semibold">タグ:</span>
-                <div className="flex gap-2 flex-wrap">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <div className="card p-6">
+              <div className="flex items-start gap-3 mb-4">
+                <span className={isVideo ? 'badge-video' : 'badge-image'}>
+                  {isVideo ? '🎬 動画' : '🖼 画像'}
+                </span>
+              </div>
+              <h1 className="text-2xl font-bold mb-3" style={{ color: '#111827' }}>{content.title}</h1>
+              {content.description && (
+                <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#4b5563' }}>
+                  {content.description}
+                </p>
+              )}
+              {content.tags?.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-4 pt-4" style={{ borderTop: '1px solid #f3f4f6' }}>
                   {content.tags.map((tag) => (
-                    <span
-                      key={tag.id}
-                      className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-semibold"
-                    >
-                      {tag.name}
-                    </span>
+                    <span key={tag.id} className="px-2 py-1 rounded-full text-xs font-medium"
+                      style={{ background: '#eff6ff', color: '#3b82f6' }}>#{tag.name}</span>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
-          <div>
-            <h2 className="text-lg font-semibold mb-3">📝 説明</h2>
-            <div className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-              {content.description}
+          <div className="card p-5 h-fit">
+            <h3 className="text-sm font-semibold mb-4 pb-3" style={{ color: '#374151', borderBottom: '1px solid #f3f4f6' }}>
+              詳細情報
+            </h3>
+            <div className="space-y-3">
+              {[
+                { label: 'ID', value: `#${content.id}` },
+                { label: '登録日', value: new Date(content.createdAt).toLocaleDateString('ja-JP') },
+                { label: '更新日', value: new Date(content.updatedAt).toLocaleDateString('ja-JP') },
+                { label: '公開設定', value: content.isPublic ? '公開' : '非公開' },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex justify-between items-center text-sm">
+                  <span style={{ color: '#9ca3af' }}>{label}</span>
+                  <span style={{ color: '#374151' }}>{value}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </main>
 
-      {/* Delete Modal */}
-      {isDeleteModalOpen && (
-        <DeleteModal content={content}
-          onClose={() => setIsDeleteModalOpen(false)}
-          onSuccess={handleDelete}
-        />
+      {showEdit && content && (
+        <EditModal content={content} onClose={() => setShowEdit(false)}
+          onSuccess={() => { setShowEdit(false); fetchContent(); }} />
+      )}
+      {showDelete && content && (
+        <DeleteModal content={content} onClose={() => setShowDelete(false)}
+          onSuccess={() => router.push('/')} />
       )}
     </div>
   );
