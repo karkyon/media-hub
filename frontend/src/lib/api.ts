@@ -93,10 +93,30 @@ export const tagsApi = {
 
 // メディアファイルのURLを取得
 export const getMediaUrl = (filePath: string): string => {
-  // filePathの形式を確認して整形
-  // "media/images/image_123.jpg" → "/contents/media/images/image_123.jpg"
-  const cleanPath = filePath.startsWith('media/') ? filePath.substring(6) : filePath;
-  return `${API_BASE_URL}/contents/media/${cleanPath}`;
+  console.log('[getMediaUrl] 受け取ったfilePath:', filePath);
+  console.log('[getMediaUrl] API_BASE_URL:', API_BASE_URL);
+  
+  // filePathのパターンを分析
+  console.log('[getMediaUrl] startsWith media/:', filePath.startsWith('media/'));
+  console.log('[getMediaUrl] startsWith /media/:', filePath.startsWith('/media/'));
+  console.log('[getMediaUrl] startsWith images/:', filePath.startsWith('images/'));
+  console.log('[getMediaUrl] startsWith videos/:', filePath.startsWith('videos/'));
+  
+  let url: string;
+  
+  if (filePath.startsWith('media/')) {
+    // "media/images/xxx.jpg" → "images/xxx.jpg"
+    const cleanPath = filePath.substring('media/'.length); // 6文字 → 正しくは7文字！
+    url = `${API_BASE_URL}/contents/media/${cleanPath}`;
+  } else if (filePath.startsWith('/media/')) {
+    const cleanPath = filePath.substring('/media/'.length);
+    url = `${API_BASE_URL}/contents/media/${cleanPath}`;
+  } else {
+    url = `${API_BASE_URL}/contents/media/${filePath}`;
+  }
+  
+  console.log('[getMediaUrl] 生成したURL:', url);
+  return url;
 };
 
 export default api;

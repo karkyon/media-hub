@@ -2,52 +2,32 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 
-// ファイル保存先ディレクトリの作成
-const mediaDir = './media';
 const videosDir = '/media/videos';
 const imagesDir = '/media/images';
 const thumbnailsDir = '/media/thumbnails';
 
-[mediaDir, videosDir, imagesDir, thumbnailsDir].forEach((dir) => {
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
+[videosDir, imagesDir, thumbnailsDir].forEach((dir) => {
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 });
 
 export const multerConfig = {
   storage: diskStorage({
     destination: (_req, file, cb) => {
-      const dir = file.mimetype.startsWith('video')
-        ? videosDir
-        : imagesDir;
-      cb(null, dir);
+      cb(null, file.mimetype.startsWith('video') ? videosDir : imagesDir);
     },
     filename: (_req, file, cb) => {
-      const uniqueSuffix = Date.now();
-      const ext = extname(file.originalname);
       const prefix = file.mimetype.startsWith('video') ? 'video' : 'image';
-      cb(null, `${prefix}_${uniqueSuffix}${ext}`);
+      cb(null, `${prefix}_${Date.now()}${extname(file.originalname)}`);
     },
   }),
-  fileFilter: (_req, file, cb) => {
-    // 許可するMIMEタイプ
+  fileFilter: (_req: any, file: any, cb: any) => {
     const allowedMimes = [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'video/mp4',
-      'video/webm',
-      'video/quicktime',
+      'image/jpeg','image/png','image/gif','image/webp',
+      'video/mp4','video/webm','video/quicktime',
     ];
-
-    if (allowedMimes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('許可されていないファイル形式です'), false);
-    }
+    cb(allowedMimes.includes(file.mimetype)
+      ? null : new Error('許可されていないファイル形式です'),
+      allowedMimes.includes(file.mimetype));
   },
-  limits: {
-    fileSize: 500 * 1024 * 1024, // 500MB
-  },
+  limits: { fileSize: 500 * 1024 * 1024 },
 };

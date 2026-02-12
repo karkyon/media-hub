@@ -110,7 +110,7 @@ export class ContentsService {
       title,
       description,
       type,
-      filePath: file.path.replace(/\\/g, '/'),
+      filePath: file.path.replace(/\\/g, '/').replace(/^\/media\//, ''),
       isPublic: isPublic !== undefined ? isPublic : true,
       tags: tagEntities,
     });
@@ -144,7 +144,7 @@ export class ContentsService {
       content.description = updateContentDto.description;
     if (updateContentDto.isPublic !== undefined)
       content.isPublic = updateContentDto.isPublic;
-    if (file) content.filePath = file.path.replace(/\\/g, '/');
+    if (file) content.filePath = file.path.replace(/\\/g, '/').replace(/^\/media\//, '');
 
     return await this.contentRepository.save(content);
   }
